@@ -78,3 +78,39 @@ $$
         end if;
     end;
 $$;
+
+create or replace function update_order_total()
+returns trigger
+language plpgsql as
+$$
+    begin
+        update orders
+        set total_amount = calculate_order_total(order_id)
+        where order_id = new.order_id;
+        return new;
+    end;
+$$;
+
+create or replace trigger trg_update_order_total
+after insert on order_items
+for each row
+execute function update_order_total();
+
+create or replace function order_audit_log()
+returns trigger
+language plpgsql as
+$$
+    begin
+        insert into order_log (order_id, customer_id, action, log_date)
+        values (new.order_id,
+                new.customer_id,
+                'add order',
+                now()::timestamp);
+        return new;
+    end;
+$$;
+
+create or replace trigger trg_order_audit_log
+after insert on orders
+for each row
+execute function order_audit_log();
