@@ -114,3 +114,46 @@ create or replace trigger trg_order_audit_log
 after insert on orders
 for each row
 execute function order_audit_log();
+
+
+
+-- TESTING
+
+-- customers can be created
+insert into customers (full_name, email, balance)
+values ('oleh hanhal', 'oleh.hanhal.25@kse.org.ua', 67);
+
+select * from customers where email = 'oleh.hanhal.25@kse.org.ua';
+
+-- products can be created
+insert into products (product_name, price, stock_quantity)
+values ('iphone 67 pro max', 675214.88, 52);
+
+select * from products where product_name = 'iphone 67 pro max';
+
+-- orders can be created using the procedure
+select * from orders;
+
+call create_order(5);
+
+select * from orders;
+
+-- products can be added to orders using the procedure
+select * from order_items
+where order_id = 4;
+
+call add_product_to_order(4, 6, 10);
+
+select * from order_items
+where order_id = 4;
+
+-- order totals are updated automatically
+select * from orders
+where order_id = 4; -- total amount value is not 0, so it was updated by trigger
+
+-- product stock decreases correctly
+select * from products
+where product_id = 6; -- value should be 42, cuz 52-10 = 42
+
+-- order creation is logged in order_log
+select * from order_log;
