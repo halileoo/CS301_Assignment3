@@ -1,0 +1,30 @@
+Query:
+explain analyze
+select
+    oi.order_id,
+    p.product_name,
+    oi.quantity,
+    oi.price,
+    oi.quantity * oi.price as item_total
+from order_items oi
+         join products p on oi.product_id = p.product_id
+where oi.order_id = 1;
+
+Explain analyze:
+QUERY PLAN
+Hash Join  (cost=27.09..41.32 rows=7 width=274) (actual time=0.103..0.111 rows=2.00 loops=1)
+  Hash Cond: (p.product_id = oi.product_id)
+  Buffers: shared hit=2
+  ->  Seq Scan on products p  (cost=0.00..13.00 rows=300 width=222) (actual time=0.038..0.040 rows=6.00 loops=1)
+        Buffers: shared hit=1
+  ->  Hash  (cost=27.00..27.00 rows=7 width=28) (actual time=0.032..0.033 rows=2.00 loops=1)
+        Buckets: 1024  Batches: 1  Memory Usage: 9kB
+        Buffers: shared hit=1
+        ->  Seq Scan on order_items oi  (cost=0.00..27.00 rows=7 width=28) (actual time=0.019..0.022 rows=2.00 loops=1)
+              Filter: (order_id = 1)
+              Rows Removed by Filter: 4
+              Buffers: shared hit=1
+Planning Time: 0.489 ms
+Execution Time: 0.189 ms
+
+Спочатку БД виконує SeqScan таблиці order_items з фільтром order_id = 1. Потім будує хеш-таблицю з елементами, які дістав з цього SeqScan. Потім проводить другий SeqScan по таблиці products, вибираючи елементи, де product_id збігається з елементами з Hash таблиці, виконуючи таким чином Hash join. 
